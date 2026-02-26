@@ -4,6 +4,7 @@ import { useAppSelector } from '@/app/hooks'
 import { selectPostById } from './postsSlice'
 import { PostAuthor } from './PostAuthor'
 import { TimeAgo } from '@/components/TimeAgo'
+import { ReactionButtons } from './ReactionButtons'
 
 export const SinglePostPage = () => {
   const { postId } = useParams()
@@ -28,6 +29,7 @@ export const SinglePostPage = () => {
         </Link>
         <PostAuthor userId={post.user} />
         <TimeAgo timestamp={post.date} />
+        <ReactionButtons post={post} />
       </article>
     </section>
   )
