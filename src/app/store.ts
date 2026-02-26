@@ -2,7 +2,9 @@ import { configureStore } from '@reduxjs/toolkit'
 import postsReducer from '../features/posts/postsSlice'
 
 export const store = configureStore({
-  reducer: postsReducer,
+  reducer: {
+    posts: postsReducer,
+  },
 })
 
 export type AppStore = typeof store
