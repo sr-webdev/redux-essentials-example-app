@@ -4,6 +4,7 @@ import { sub } from 'date-fns'
 import { userLoggedIn, userLoggedOut } from '@/features/auth/authSlice'
 import { createAppAsyncThunk } from '@/app/withTypes'
 import { client } from '@/api/client'
+import { RootState } from '@/app/store'
 
 export interface Reactions {
   thumbsUp: number
@@ -128,6 +129,12 @@ export const { reactionAdded } = postsSlice.actions
 export const { selectAllPosts, selectPostById, selectPostsStatus, selectPostsError } = postsSlice.selectors
 
 export default postsSlice.reducer
+
+export const selectPostsByUser = (state: RootState, userId: string) => {
+  const allPosts = selectAllPosts(state)
+  // ❌ This seems suspicious! See more details below
+  return allPosts.filter((post) => post.user === userId)
+}
 
 // export const selectAllPosts = (state: RootState) => state.posts
 // export const selectPostById = (state: RootState, id: string) => state.posts.find((post) => post.id === id)

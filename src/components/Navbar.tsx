@@ -7,7 +7,6 @@ import { UserIcon } from './UserIcon'
 export const Navbar = () => {
   const dispatch = useAppDispatch()
   const user = useAppSelector(selectCurrentUser)
-  console.log(user)
 
   const isLoggedIn = !!user
 
@@ -22,6 +21,7 @@ export const Navbar = () => {
       <div className="navContent">
         <div className="navLinks">
           <Link to="/posts">Posts</Link>
+          <Link to="/users">Users</Link>
         </div>
         <div className="userDetails">
           <UserIcon size={32} />
