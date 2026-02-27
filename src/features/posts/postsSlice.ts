@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { createAppAsyncThunk } from '@/app/withTypes'
 import { client } from '@/api/client'
@@ -129,11 +129,17 @@ export const { selectAllPosts, selectPostById, selectPostsStatus, selectPostsErr
 
 export default postsSlice.reducer
 
-export const selectPostsByUser = (state: RootState, userId: string) => {
-  const allPosts = selectAllPosts(state)
-  // ❌ This seems suspicious! See more details below
-  return allPosts.filter((post) => post.user === userId)
-}
-
-// export const selectAllPosts = (state: RootState) => state.posts
-// export const selectPostById = (state: RootState, id: string) => state.posts.find((post) => post.id === id)
+export const selectPostsByUser = createSelector(
+  //Array of input selectors
+  [
+    // we can pass in an existing selector function that
+    // reads something from the root `state` and returns it
+    selectAllPosts,
+    // and another function that extracts one of the arguments
+    // and passes that onward
+    (state: RootState, userId: string) => userId,
+  ],
+  // the output function gets those values as its arguments,
+  // and will run when either input value changes
+  (posts, userId) => posts.filter((post) => post.user === userId),
+)
