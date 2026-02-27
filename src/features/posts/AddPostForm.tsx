@@ -1,8 +1,7 @@
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
-import React from 'react'
-import { postAdded } from './postsSlice'
-import { selectAllUsers } from '../users/usersSlice'
+import React, { useState } from 'react'
 import { selectCurrentUserId } from '../auth/authSlice'
+import { addNewPost } from './postsSlice'
 
 // TS types for the input fields
 // See: https://epicreact.dev/how-to-type-a-react-form-on-submit-handler/
@@ -15,28 +14,31 @@ interface AddPostFormElements extends HTMLFormElement {
 }
 
 export const AddPostForm = () => {
+  const [reqStatus, setReqStatus] = useState<'idle' | 'pending'>('idle')
   const dispatch = useAppDispatch()
-  const users = useAppSelector(selectAllUsers)
   const userId = useAppSelector(selectCurrentUserId)!
 
-  const handleSubmit = (e: React.FormEvent<AddPostFormElements>) => {
+  const handleSubmit = async (e: React.FormEvent<AddPostFormElements>) => {
     // Prevent server submission
     e.preventDefault()
 
-    const { elements } = e.currentTarget
+    const form = e.currentTarget
+
+    const { elements } = form
     const title = elements.postTitle.value
     const content = elements.postContent.value
 
-    dispatch(postAdded(title, content, userId))
-
-    e.currentTarget.reset()
+    try {
+      setReqStatus('pending')
+      //The unwrap() method returns the action.payload value from a fulfilled action or throws and error if rejected. It allows us to handle success and failure inside a try/catch logic
+      await dispatch(addNewPost({ user: userId, title, content })).unwrap()
+      e.currentTarget.reset()
+    } catch (err) {
+      console.error('Failed to save the post: ', err)
+    } finally {
+      setReqStatus('idle')
+    }
   }
-
-  const usersOptions = users.map((user) => (
-    <option key={user.id} value={user.id}>
-      {user.name}
-    </option>
-  ))
 
   return (
     <section>

@@ -25,14 +25,15 @@ export interface Post {
 }
 
 type PostUpdate = Pick<Post, 'id' | 'title' | 'content'>
+type NewPost = Pick<Post, 'title' | 'content' | 'user'>
 
-const initialReactions: Reactions = {
-  thumbsUp: 0,
-  tada: 0,
-  heart: 0,
-  rocket: 0,
-  eyes: 0,
-}
+// const initialReactions: Reactions = {
+//   thumbsUp: 0,
+//   tada: 0,
+//   heart: 0,
+//   rocket: 0,
+//   eyes: 0,
+// }
 
 interface PostsState {
   posts: Post[]
@@ -54,6 +55,16 @@ export const fetchPosts = createAppAsyncThunk(
   },
 )
 
+export const addNewPost = createAppAsyncThunk('posts/addNewPost', async (newPost: NewPost) => {
+  const response = await client.post<Post>('/fakeApi/posts', newPost)
+  return response.data
+})
+
+export const updatePost = createAppAsyncThunk('posts/updatePost', async (postUpdate: PostUpdate) => {
+  const response = await client.patch<Post>(`/fakeApi/posts/${postUpdate.id}`, postUpdate)
+  return response.data
+})
+
 const initialState: PostsState = {
   posts: [],
   status: 'idle',
@@ -64,32 +75,6 @@ const postsSlice = createSlice({
   name: 'posts',
   initialState,
   reducers: {
-    postAdded: {
-      reducer(state, action: PayloadAction<Post>) {
-        state.posts.push(action.payload)
-      },
-      prepare(title: string, content: string, userId: string) {
-        return {
-          payload: {
-            id: nanoid(),
-            title,
-            content,
-            user: userId,
-            date: new Date().toISOString(),
-            reactions: initialReactions,
-          },
-        }
-      },
-    },
-    postUpdated(state, action: PayloadAction<PostUpdate>) {
-      const { id, title, content } = action.payload
-      const existingPost = state.posts.find((post) => post.id === id)
-
-      if (existingPost) {
-        existingPost.title = title
-        existingPost.content = content
-      }
-    },
     reactionAdded(state, action: PayloadAction<{ postId: string; reaction: ReactionName }>) {
       const { postId, reaction } = action.payload
       const existingPost = state.posts.find((post) => post.id === postId)
@@ -116,6 +101,19 @@ const postsSlice = createSlice({
         state.status = 'failed'
         state.error = action.error.message ?? 'Unknown Error'
       })
+      //Handle Add new post
+      .addCase(addNewPost.fulfilled, (state, action) => {
+        state.posts.push(action.payload)
+      })
+      //Handle update post
+      .addCase(updatePost.fulfilled, (state, action) => {
+        const { id, title, content } = action.payload
+        const existingPost = state.posts.find((post) => post.id === id)
+        if (existingPost) {
+          existingPost.title = title
+          existingPost.content = content
+        }
+      })
   },
   selectors: {
     selectAllPosts: (postsState) => postsState.posts,
@@ -125,7 +123,7 @@ const postsSlice = createSlice({
   },
 })
 
-export const { postAdded, postUpdated, reactionAdded } = postsSlice.actions
+export const { reactionAdded } = postsSlice.actions
 
 export const { selectAllPosts, selectPostById, selectPostsStatus, selectPostsError } = postsSlice.selectors
 

@@ -53,3 +53,7 @@ client.get = function <T>(endpoint: string, customConfig: Partial<RequestInit> =
 client.post = function <T>(endpoint: string, body: any, customConfig: Partial<RequestInit> = {}) {
   return client<T>(endpoint, { ...customConfig, body })
 }
+
+client.patch = function <T>(endpoint: string, body: any, customConfig: Partial<RequestInit> = {}) {
+  return client<T>(endpoint, { ...customConfig, method: 'PATCH', body })
+}
