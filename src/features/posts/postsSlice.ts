@@ -1,7 +1,9 @@
 import { createSlice, nanoid, PayloadAction } from '@reduxjs/toolkit'
 import { sub } from 'date-fns'
 
-import { userLoggedOut } from '@/features/auth/authSlice'
+import { userLoggedIn, userLoggedOut } from '@/features/auth/authSlice'
+import { createAppAsyncThunk } from '@/app/withTypes'
+import { client } from '@/api/client'
 
 export interface Reactions {
   thumbsUp: number
@@ -32,24 +34,31 @@ const initialReactions: Reactions = {
   eyes: 0,
 }
 
-const initialState: Post[] = [
-  {
-    id: '1',
-    title: 'First Post!',
-    content: 'Hello!',
-    user: '0',
-    date: sub(new Date(), { minutes: 10 }).toISOString(),
-    reactions: initialReactions,
+interface PostsState {
+  posts: Post[]
+  status: 'idle' | 'pending' | 'succeeded' | 'failed'
+  error: string | null
+}
+
+export const fetchPosts = createAppAsyncThunk(
+  'posts/fetchPosts',
+  async () => {
+    const response = await client.get<Post[]>('/fakeApi/posts')
+    return response.data
   },
   {
-    id: '2',
-    title: 'Second Post',
-    content: 'More text',
-    user: '2',
-    date: sub(new Date(), { minutes: 5 }).toISOString(),
-    reactions: initialReactions,
+    condition(_, thunkApi) {
+      const postsStatus = selectPostsStatus(thunkApi.getState())
+      if (postsStatus !== 'idle') return false
+    },
   },
-]
+)
+
+const initialState: PostsState = {
+  posts: [],
+  status: 'idle',
+  error: null,
+}
 
 const postsSlice = createSlice({
   name: 'posts',
@@ -57,7 +66,7 @@ const postsSlice = createSlice({
   reducers: {
     postAdded: {
       reducer(state, action: PayloadAction<Post>) {
-        state.push(action.payload)
+        state.posts.push(action.payload)
       },
       prepare(title: string, content: string, userId: string) {
         return {
@@ -74,7 +83,7 @@ const postsSlice = createSlice({
     },
     postUpdated(state, action: PayloadAction<PostUpdate>) {
       const { id, title, content } = action.payload
-      const existingPost = state.find((post) => post.id === id)
+      const existingPost = state.posts.find((post) => post.id === id)
 
       if (existingPost) {
         existingPost.title = title
@@ -83,26 +92,42 @@ const postsSlice = createSlice({
     },
     reactionAdded(state, action: PayloadAction<{ postId: string; reaction: ReactionName }>) {
       const { postId, reaction } = action.payload
-      const existingPost = state.find((post) => post.id === postId)
+      const existingPost = state.posts.find((post) => post.id === postId)
       if (existingPost) {
         existingPost.reactions[reaction]++
       }
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(userLoggedOut, () => {
-      return []
-    })
+    builder
+      .addCase(userLoggedOut, () => {
+        //Reset state when user logs out
+        return initialState
+      })
+      //Handle fetchPosts different status
+      .addCase(fetchPosts.pending, (state) => {
+        state.status = 'pending'
+      })
+      .addCase(fetchPosts.fulfilled, (state, action) => {
+        state.status = 'succeeded'
+        state.posts.push(...action.payload)
+      })
+      .addCase(fetchPosts.rejected, (state, action) => {
+        state.status = 'failed'
+        state.error = action.error.message ?? 'Unknown Error'
+      })
   },
   selectors: {
-    selectAllPosts: (postsState) => postsState,
-    selectPostById: (postsState, id: string) => postsState.find((post) => post.id === id),
+    selectAllPosts: (postsState) => postsState.posts,
+    selectPostById: (postsState, id: string) => postsState.posts.find((post) => post.id === id),
+    selectPostsStatus: (postsState) => postsState.status,
+    selectPostsError: (postsState) => postsState.error,
   },
 })
 
 export const { postAdded, postUpdated, reactionAdded } = postsSlice.actions
 
-export const { selectAllPosts, selectPostById } = postsSlice.selectors
+export const { selectAllPosts, selectPostById, selectPostsStatus, selectPostsError } = postsSlice.selectors
 
 export default postsSlice.reducer
 
