@@ -1,8 +1,8 @@
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
-import { userLoggedOut } from '@/features/auth/authSlice'
 import { selectCurrentUser } from '@/features/users/usersSlice'
 import { Link } from 'react-router-dom'
 import { UserIcon } from './UserIcon'
+import { logout } from '@/features/auth/authSlice'
 
 export const Navbar = () => {
   const dispatch = useAppDispatch()
@@ -14,7 +14,7 @@ export const Navbar = () => {
 
   if (isLoggedIn) {
     const onLogoutClicked = () => {
-      dispatch(userLoggedOut())
+      dispatch(logout())
     }
 
     navContent = (

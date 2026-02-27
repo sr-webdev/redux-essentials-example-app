@@ -1,10 +1,9 @@
-import { createSlice, nanoid, PayloadAction } from '@reduxjs/toolkit'
-import { sub } from 'date-fns'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-import { userLoggedIn, userLoggedOut } from '@/features/auth/authSlice'
 import { createAppAsyncThunk } from '@/app/withTypes'
 import { client } from '@/api/client'
 import { RootState } from '@/app/store'
+import { logout } from '../auth/authSlice'
 
 export interface Reactions {
   thumbsUp: number
@@ -86,7 +85,7 @@ const postsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(userLoggedOut, () => {
+      .addCase(logout.fulfilled, () => {
         //Reset state when user logs out
         return initialState
       })
