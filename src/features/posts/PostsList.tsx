@@ -1,6 +1,14 @@
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { Link } from 'react-router-dom'
-import { fetchPosts, Post, selectAllPosts, selectPostsError, selectPostsStatus } from './postsSlice'
+import {
+  fetchPosts,
+  Post,
+  selectAllPosts,
+  selectPostById,
+  selectPostIds,
+  selectPostsError,
+  selectPostsStatus,
+} from './postsSlice'
 import { PostAuthor } from './PostAuthor'
 import { TimeAgo } from '@/components/TimeAgo'
 import { ReactionButtons } from './ReactionButtons'
@@ -8,10 +16,14 @@ import { useEffect } from 'react'
 import { Spinner } from '@/components/Spinner'
 
 interface PostExcerptProps {
-  post: Post
+  postId: string
 }
 
-function PostExcerpt({ post }: PostExcerptProps) {
+//memo to momoize the component: rerenders only when props change
+// const PostExcerpt = memo(({ post }: PostExcerptProps) => {
+const PostExcerpt = ({ postId }: PostExcerptProps) => {
+  const post = useAppSelector((state) => selectPostById(state, postId))
+
   return (
     <article className="post-excerpt" key={post.id}>
       <h3>
@@ -26,11 +38,13 @@ function PostExcerpt({ post }: PostExcerptProps) {
     </article>
   )
 }
+// })
 
 export const PostsList = () => {
   const dispatch = useAppDispatch()
   // Select the `state.posts` value from the store into the component
-  const posts = useAppSelector(selectAllPosts)
+  // const posts = useAppSelector(selectAllPosts)
+  const postIds = useAppSelector(selectPostIds)
   const postsStatus = useAppSelector(selectPostsStatus)
   const postsError = useAppSelector(selectPostsError)
 
@@ -43,8 +57,9 @@ export const PostsList = () => {
   if (postsStatus === 'pending') {
     content = <Spinner text="Loading..." />
   } else if (postsStatus === 'succeeded') {
-    const orderedPosts = posts.slice().sort((a, b) => b.date.localeCompare(a.date))
-    content = orderedPosts.map((post) => <PostExcerpt key={post.id} post={post} />)
+    content = postIds.map((postId) => <PostExcerpt key={postId} postId={postId} />)
+    // const orderedPosts = posts.slice().sort((a, b) => b.date.localeCompare(a.date))
+    // content = orderedPosts.map((post) => <PostExcerpt key={post.id} post={post} />)
   } else if (postsStatus === 'failed') {
     content = <div>{postsError}</div>
   }
