@@ -1,4 +1,4 @@
-import { createEntityAdapter, createSelector, createSlice, EntityState, PayloadAction } from '@reduxjs/toolkit'
+import { createEntityAdapter, createSelector, createSlice, EntityState, isAnyOf, PayloadAction } from '@reduxjs/toolkit'
 
 import { createAppAsyncThunk } from '@/app/withTypes'
 import { client } from '@/api/client'
@@ -138,11 +138,19 @@ export const selectPostsByUser = createSelector(
 
 export const addPostsListeners = (startAppListening: AppStartListening) => {
   startAppListening({
-    actionCreator: addNewPost.fulfilled,
+    matcher: isAnyOf(addNewPost.fulfilled, updatePost.fulfilled),
+    // actionCreator: addNewPost.fulfilled,
     effect: async (action, listenerApi) => {
       const { toast } = await import('react-tiny-toast')
 
-      const toastId = toast.show('New post added!', {
+      let toastText: string
+      if (action.type === 'posts/addNewPost/fulfilled') {
+        toastText = 'New post added!'
+      } else {
+        toastText = 'Post updated!'
+      }
+
+      const toastId = toast.show(toastText, {
         variant: 'success',
         position: 'bottom-right',
         pause: true,
