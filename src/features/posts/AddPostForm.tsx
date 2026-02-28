@@ -32,7 +32,7 @@ export const AddPostForm = () => {
       setReqStatus('pending')
       //The unwrap() method returns the action.payload value from a fulfilled action or throws and error if rejected. It allows us to handle success and failure inside a try/catch logic
       await dispatch(addNewPost({ user: userId, title, content })).unwrap()
-      e.currentTarget.reset()
+      form.reset()
     } catch (err) {
       console.error('Failed to save the post: ', err)
     } finally {
