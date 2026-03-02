@@ -1,10 +1,6 @@
-import { createEntityAdapter, createSelector, createSlice, EntityState, isAnyOf, PayloadAction } from '@reduxjs/toolkit'
-
-import { createAppAsyncThunk } from '@/app/withTypes'
-import { client } from '@/api/client'
-import { RootState } from '@/app/store'
-import { logout } from '../auth/authSlice'
-import { AppStartListening, startAppListening } from '@/app/listenerMiddleware'
+import { AppStartListening } from '@/app/listenerMiddleware'
+import { apiSlice } from '../api/apiSlice'
+import { isAnyOf } from '@reduxjs/toolkit'
 
 export interface Reactions {
   thumbsUp: number
@@ -25,128 +21,136 @@ export interface Post {
   reactions: Reactions
 }
 
-type PostUpdate = Pick<Post, 'id' | 'title' | 'content'>
+export type PostUpdate = Pick<Post, 'id' | 'title' | 'content'>
 export type NewPost = Pick<Post, 'title' | 'content' | 'user'>
 
-interface PostsState extends EntityState<Post, string> {
-  status: 'idle' | 'pending' | 'succeeded' | 'failed'
-  error: string | null
+export type Reacting = {
+  postId: string
+  reactionName: ReactionName
 }
 
-const postsAdapter = createEntityAdapter<Post>({
-  //Sort in desc order
-  sortComparer: (a, b) => b.date.localeCompare(a.date),
-})
+// interface PostsState extends EntityState<Post, string> {
+//   status: 'idle' | 'pending' | 'succeeded' | 'failed'
+//   error: string | null
+// }
 
-const initialState: PostsState = postsAdapter.getInitialState({
-  status: 'idle',
-  error: null,
-})
+// const postsAdapter = createEntityAdapter<Post>({
+//   //Sort in desc order
+//   sortComparer: (a, b) => b.date.localeCompare(a.date),
+// })
 
-export const fetchPosts = createAppAsyncThunk(
-  'posts/fetchPosts',
-  async () => {
-    const response = await client.get<Post[]>('/fakeApi/posts')
-    return response.data
-  },
-  {
-    condition(_, thunkApi) {
-      const postsStatus = selectPostsStatus(thunkApi.getState())
-      if (postsStatus !== 'idle') return false
-    },
-  },
-)
+// const initialState: PostsState = postsAdapter.getInitialState({
+//   status: 'idle',
+//   error: null,
+// })
 
-export const addNewPost = createAppAsyncThunk('posts/addNewPost', async (newPost: NewPost) => {
-  const response = await client.post<Post>('/fakeApi/posts', newPost)
-  return response.data
-})
+// export const fetchPosts = createAppAsyncThunk(
+//   'posts/fetchPosts',
+//   async () => {
+//     const response = await client.get<Post[]>('/fakeApi/posts')
+//     return response.data
+//   },
+//   {
+//     condition(_, thunkApi) {
+//       const postsStatus = selectPostsStatus(thunkApi.getState())
+//       if (postsStatus !== 'idle') return false
+//     },
+//   },
+// )
 
-export const updatePost = createAppAsyncThunk('posts/updatePost', async (postUpdate: PostUpdate) => {
-  const response = await client.patch<Post>(`/fakeApi/posts/${postUpdate.id}`, postUpdate)
-  return response.data
-})
+// export const addNewPost = createAppAsyncThunk('posts/addNewPost', async (newPost: NewPost) => {
+//   const response = await client.post<Post>('/fakeApi/posts', newPost)
+//   return response.data
+// })
 
-const postsSlice = createSlice({
-  name: 'posts',
-  initialState,
-  reducers: {
-    reactionAdded(state, action: PayloadAction<{ postId: string; reaction: ReactionName }>) {
-      const { postId, reaction } = action.payload
-      const existingPost = state.entities[postId]
-      if (existingPost) {
-        existingPost.reactions[reaction]++
-      }
-    },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(logout.fulfilled, () => {
-        //Reset state when user logs out
-        return initialState
-      })
-      //Handle fetchPosts different status
-      .addCase(fetchPosts.pending, (state) => {
-        state.status = 'pending'
-      })
-      .addCase(fetchPosts.fulfilled, (state, action) => {
-        state.status = 'succeeded'
-        postsAdapter.setAll(state, action.payload)
-      })
-      .addCase(fetchPosts.rejected, (state, action) => {
-        state.status = 'failed'
-        state.error = action.error.message ?? 'Unknown Error'
-      })
-      //Handle Add new post
-      .addCase(addNewPost.fulfilled, postsAdapter.addOne)
-      //Handle update post
-      .addCase(updatePost.fulfilled, (state, action) => {
-        const { id, title, content } = action.payload
-        postsAdapter.updateOne(state, { id, changes: { title, content } })
-      })
-  },
-  selectors: {
-    selectPostsStatus: (postsState) => postsState.status,
-    selectPostsError: (postsState) => postsState.error,
-  },
-})
+// export const updatePost = createAppAsyncThunk('posts/updatePost', async (postUpdate: PostUpdate) => {
+//   const response = await client.patch<Post>(`/fakeApi/posts/${postUpdate.id}`, postUpdate)
+//   return response.data
+// })
 
-export const { reactionAdded } = postsSlice.actions
+// const postsSlice = createSlice({
+//   name: 'posts',
+//   initialState,
+//   reducers: {
+//     reactionAdded(state, action: PayloadAction<{ postId: string; reaction: ReactionName }>) {
+//       const { postId, reaction } = action.payload
+//       const existingPost = state.entities[postId]
+//       if (existingPost) {
+//         existingPost.reactions[reaction]++
+//       }
+//     },
+//   },
+//   extraReducers: (builder) => {
+//     builder
+//       .addCase(logout.fulfilled, () => {
+//         //Reset state when user logs out
+//         return initialState
+//       })
+//       //Handle fetchPosts different status
+//       .addCase(fetchPosts.pending, (state) => {
+//         state.status = 'pending'
+//       })
+//       .addCase(fetchPosts.fulfilled, (state, action) => {
+//         state.status = 'succeeded'
+//         postsAdapter.setAll(state, action.payload)
+//       })
+//       .addCase(fetchPosts.rejected, (state, action) => {
+//         state.status = 'failed'
+//         state.error = action.error.message ?? 'Unknown Error'
+//       })
+//       //Handle Add new post
+//       .addCase(addNewPost.fulfilled, postsAdapter.addOne)
+//       //Handle update post
+//       .addCase(updatePost.fulfilled, (state, action) => {
+//         const { id, title, content } = action.payload
+//         postsAdapter.updateOne(state, { id, changes: { title, content } })
+//       })
+//   },
+//   selectors: {
+//     selectPostsStatus: (postsState) => postsState.status,
+//     selectPostsError: (postsState) => postsState.error,
+//   },
+// })
 
-export const {
-  selectAll: selectAllPosts,
-  selectById: selectPostById,
-  selectIds: selectPostIds,
-} = postsAdapter.getSelectors((state: RootState) => state.posts)
+// export const { reactionAdded } = postsSlice.actions
 
-export const { selectPostsStatus, selectPostsError } = postsSlice.selectors
+// export const {
+//   selectAll: selectAllPosts,
+//   selectById: selectPostById,
+//   selectIds: selectPostIds,
+// } = postsAdapter.getSelectors((state: RootState) => state.posts)
 
-export const selectPostsByUser = createSelector(
-  //Array of input selectors
-  [
-    // we can pass in an existing selector function that
-    // reads something from the root `state` and returns it
-    selectAllPosts,
-    // and another function that extracts one of the arguments
-    // and passes that onward
-    (state: RootState, userId: string) => userId,
-  ],
-  // the output function gets those values as its arguments,
-  // and will run when either input value changes
-  (posts, userId) => posts.filter((post) => post.user === userId),
-)
+// export const { selectPostsStatus, selectPostsError } = postsSlice.selectors
+
+// export const selectPostsByUser = createSelector(
+//   //Array of input selectors
+//   [
+//     // we can pass in an existing selector function that
+//     // reads something from the root `state` and returns it
+//     selectAllPosts,
+//     // and another function that extracts one of the arguments
+//     // and passes that onward
+//     (state: RootState, userId: string) => userId,
+//   ],
+//   // the output function gets those values as its arguments,
+//   // and will run when either input value changes
+//   (posts, userId) => posts.filter((post) => post.user === userId),
+// )
 
 export const addPostsListeners = (startAppListening: AppStartListening) => {
   startAppListening({
-    matcher: isAnyOf(addNewPost.fulfilled, updatePost.fulfilled),
+    matcher: isAnyOf(apiSlice.endpoints.addNewPost.matchFulfilled, apiSlice.endpoints.editPost.matchFulfilled),
     effect: async (action, listenerApi) => {
       const { toast } = await import('react-tiny-toast')
 
       let toastText: string
-      if (action.type === 'posts/addNewPost/fulfilled') {
+
+      if (apiSlice.endpoints.addNewPost.matchFulfilled(action)) {
         toastText = 'New post added!'
-      } else {
+      } else if (apiSlice.endpoints.editPost.matchFulfilled(action)) {
         toastText = 'Post updated!'
+      } else {
+        toastText = 'Unknown action.'
       }
 
       const toastId = toast.show(toastText, {
@@ -161,4 +165,4 @@ export const addPostsListeners = (startAppListening: AppStartListening) => {
   })
 }
 
-export default postsSlice.reducer
+// export default postsSlice.reducer

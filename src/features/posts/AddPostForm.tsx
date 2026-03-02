@@ -1,7 +1,6 @@
-import { useAppDispatch, useAppSelector } from '@/app/hooks'
-import React, { useState } from 'react'
+import { useAppSelector } from '@/app/hooks'
+import React from 'react'
 import { selectCurrentUserId } from '../auth/authSlice'
-import { addNewPost } from './postsSlice'
 import { useAddNewPostMutation } from '../api/apiSlice'
 
 // TS types for the input fields

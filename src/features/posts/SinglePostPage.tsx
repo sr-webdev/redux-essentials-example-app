@@ -1,7 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 
 import { useAppSelector } from '@/app/hooks'
-import { selectPostById } from './postsSlice'
 import { PostAuthor } from './PostAuthor'
 import { TimeAgo } from '@/components/TimeAgo'
 import { ReactionButtons } from './ReactionButtons'

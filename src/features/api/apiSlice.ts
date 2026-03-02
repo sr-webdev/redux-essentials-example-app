@@ -3,7 +3,10 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 // Use the `Post` type we've already defined in `postsSlice`,
 // and then re-export it for ease of use
-import { NewPost, Post } from '../posts/postsSlice'
+import { NewPost, Post, PostUpdate, Reacting } from '../posts/postsSlice'
+
+import type { User } from '@/features/users/usersSlice'
+
 export type { Post }
 
 export const apiSlice = createApi({
@@ -13,6 +16,7 @@ export const apiSlice = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: '/fakeApi' }),
   // To invalidate cache
   tagTypes: ['Post'],
+  keepUnusedDataFor: 60, //Default 60s
   // The "endpoints" represent operations and requests for this server
   endpoints: (builder) => ({
     // The `getPosts` endpoint is a "query" operation that returns data.
@@ -20,10 +24,11 @@ export const apiSlice = createApi({
     getPosts: builder.query<Post[], void>({
       // The URL for the request is '/fakeApi/posts'
       query: () => '/posts',
-      providesTags: ['Post'],
+      providesTags: (result = [], error) => ['Post', ...result.map(({ id }) => ({ type: 'Post', id }) as const)],
     }),
     getPost: builder.query<Post, string>({
       query: (postId) => `/posts/${postId}`,
+      providesTags: (result, error, arg) => [{ type: 'Post', id: arg }],
     }),
     addNewPost: builder.mutation<Post, NewPost>({
       query: (newPost) => ({
@@ -33,8 +38,35 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Post'],
     }),
+    editPost: builder.mutation<Post, PostUpdate>({
+      query: (postUpdate) => ({
+        url: `/posts/${postUpdate.id}`,
+        method: 'PATCH',
+        body: postUpdate,
+      }),
+      invalidatesTags: (result, error, arg) => [{ type: 'Post', id: arg.id }],
+    }),
+    addReaction: builder.mutation<Post, Reacting>({
+      query: (reacting) => ({
+        url: `/posts/${reacting.postId}/reactions`,
+        method: 'POST',
+        body: { reaction: reacting.reactionName },
+      }),
+      invalidatesTags: (results, error, arg) => [{ type: 'Post', id: arg.postId }],
+    }),
+    /***** USERS ENDPOINTS *******/
+    getUsers: builder.query<User[], void>({
+      query: () => '/users',
+    }),
   }),
 })
 
 // Export the auto-generated hook for the `getPosts` query endpoint
-export const { useGetPostsQuery, useGetPostQuery, useAddNewPostMutation } = apiSlice
+export const {
+  useGetPostsQuery,
+  useGetPostQuery,
+  useAddNewPostMutation,
+  useEditPostMutation,
+  useAddReactionMutation,
+  useGetUsersQuery,
+} = apiSlice

@@ -4,9 +4,8 @@ import type { RootState } from '@/app/store'
 import { selectCurrentUserId } from '../auth/authSlice'
 import { createAppAsyncThunk } from '@/app/withTypes'
 import { client } from '@/api/client'
-import { create } from 'domain'
 
-interface User {
+export interface User {
   id: string
   name: string
 }
