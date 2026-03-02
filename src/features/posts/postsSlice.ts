@@ -1,6 +1,7 @@
 import { AppStartListening } from '@/app/listenerMiddleware'
 import { apiSlice } from '../api/apiSlice'
-import { isAnyOf } from '@reduxjs/toolkit'
+import { createSelector, isAnyOf } from '@reduxjs/toolkit'
+import { RootState } from '@/app/store'
 
 export interface Reactions {
   thumbsUp: number
@@ -136,6 +137,16 @@ export type Reacting = {
 //   // and will run when either input value changes
 //   (posts, userId) => posts.filter((post) => post.user === userId),
 // )
+
+export const selectPostsResult = apiSlice.endpoints.getPosts.select()
+
+export const selectAllPosts = createSelector(selectPostsResult, (postsResult) => postsResult?.data ?? [])
+
+export const selectPostsByUser = createSelector(
+  selectAllPosts,
+  (state: RootState, userId: string) => userId,
+  (posts, userId) => posts.filter((post) => post.user === userId),
+)
 
 export const addPostsListeners = (startAppListening: AppStartListening) => {
   startAppListening({

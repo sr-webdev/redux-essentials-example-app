@@ -1,4 +1,4 @@
-import { createEntityAdapter, createSelector, createSlice } from '@reduxjs/toolkit'
+import { createSelector } from '@reduxjs/toolkit'
 
 import type { RootState } from '@/app/store'
 import { selectCurrentUserId } from '../auth/authSlice'
