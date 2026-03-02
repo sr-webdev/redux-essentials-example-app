@@ -1,29 +1,19 @@
-import { useAppDispatch, useAppSelector } from '@/app/hooks'
+import classnames from 'classnames'
+
 import { Link } from 'react-router-dom'
-import {
-  fetchPosts,
-  Post,
-  selectAllPosts,
-  selectPostById,
-  selectPostIds,
-  selectPostsError,
-  selectPostsStatus,
-} from './postsSlice'
+import { Post } from './postsSlice'
 import { PostAuthor } from './PostAuthor'
 import { TimeAgo } from '@/components/TimeAgo'
 import { ReactionButtons } from './ReactionButtons'
-import { useEffect } from 'react'
+import { memo, useMemo } from 'react'
 import { Spinner } from '@/components/Spinner'
+import { useGetPostsQuery } from '../api/apiSlice'
 
 interface PostExcerptProps {
-  postId: string
+  post: Post
 }
 
-//memo to momoize the component: rerenders only when props change
-// const PostExcerpt = memo(({ post }: PostExcerptProps) => {
-const PostExcerpt = ({ postId }: PostExcerptProps) => {
-  const post = useAppSelector((state) => selectPostById(state, postId))
-
+const PostExcerpt = memo(({ post }: PostExcerptProps) => {
   return (
     <article className="post-excerpt" key={post.id}>
       <h3>
@@ -37,31 +27,33 @@ const PostExcerpt = ({ postId }: PostExcerptProps) => {
       <ReactionButtons post={post} />
     </article>
   )
-}
-// })
+  // }
+})
 
 export const PostsList = () => {
-  const dispatch = useAppDispatch()
-  // Select the `state.posts` value from the store into the component
-  // const posts = useAppSelector(selectAllPosts)
-  const postIds = useAppSelector(selectPostIds)
-  const postsStatus = useAppSelector(selectPostsStatus)
-  const postsError = useAppSelector(selectPostsError)
+  // Calling the `useGetPostsQuery()` hook automatically fetches data
+  const { data: posts = [], isLoading, isFetching, isSuccess, isError, error } = useGetPostsQuery()
 
-  useEffect(() => {
-    if (postsStatus === 'idle') dispatch(fetchPosts())
-  }, [postsStatus, dispatch])
+  //Memoize sorted posts so that it only computes again when posts change
+  const sortedPosts = useMemo(() => {
+    const sortedPosts = posts.slice()
+    sortedPosts.sort((a, b) => b.date.localeCompare(a.date))
+    return sortedPosts
+  }, [posts])
 
   let content: React.ReactNode
 
-  if (postsStatus === 'pending') {
+  if (isLoading) {
     content = <Spinner text="Loading..." />
-  } else if (postsStatus === 'succeeded') {
-    content = postIds.map((postId) => <PostExcerpt key={postId} postId={postId} />)
-    // const orderedPosts = posts.slice().sort((a, b) => b.date.localeCompare(a.date))
-    // content = orderedPosts.map((post) => <PostExcerpt key={post.id} post={post} />)
-  } else if (postsStatus === 'failed') {
-    content = <div>{postsError}</div>
+  } else if (isSuccess) {
+    const renderedPosts = sortedPosts.map((post) => <PostExcerpt key={post.id} post={post} />)
+
+    const containerClassname = classnames('posts-container', {
+      disabled: isFetching,
+    })
+    content = <div className={containerClassname}>{renderedPosts}</div>
+  } else if (isError) {
+    content = <div>{error.toString()}</div>
   }
 
   return (

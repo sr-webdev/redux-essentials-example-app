@@ -26,7 +26,7 @@ export interface Post {
 }
 
 type PostUpdate = Pick<Post, 'id' | 'title' | 'content'>
-type NewPost = Pick<Post, 'title' | 'content' | 'user'>
+export type NewPost = Pick<Post, 'title' | 'content' | 'user'>
 
 interface PostsState extends EntityState<Post, string> {
   status: 'idle' | 'pending' | 'succeeded' | 'failed'
@@ -139,7 +139,6 @@ export const selectPostsByUser = createSelector(
 export const addPostsListeners = (startAppListening: AppStartListening) => {
   startAppListening({
     matcher: isAnyOf(addNewPost.fulfilled, updatePost.fulfilled),
-    // actionCreator: addNewPost.fulfilled,
     effect: async (action, listenerApi) => {
       const { toast } = await import('react-tiny-toast')
 
