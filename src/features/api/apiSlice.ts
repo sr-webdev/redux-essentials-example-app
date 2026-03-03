@@ -54,19 +54,9 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: (results, error, arg) => [{ type: 'Post', id: arg.postId }],
     }),
-    /***** USERS ENDPOINTS *******/
-    getUsers: builder.query<User[], void>({
-      query: () => '/users',
-    }),
   }),
 })
 
 // Export the auto-generated hook for the `getPosts` query endpoint
-export const {
-  useGetPostsQuery,
-  useGetPostQuery,
-  useAddNewPostMutation,
-  useEditPostMutation,
-  useAddReactionMutation,
-  useGetUsersQuery,
-} = apiSlice
+export const { useGetPostsQuery, useGetPostQuery, useAddNewPostMutation, useEditPostMutation, useAddReactionMutation } =
+  apiSlice
