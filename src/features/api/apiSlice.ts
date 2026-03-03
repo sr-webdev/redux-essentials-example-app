@@ -52,7 +52,32 @@ export const apiSlice = createApi({
         method: 'POST',
         body: { reaction: reacting.reactionName },
       }),
-      invalidatesTags: (results, error, arg) => [{ type: 'Post', id: arg.postId }],
+      //Optimistic update => update the query cache without awaiting server response
+      async onQueryStarted({ postId, reactionName }, lifecycleApi) {
+        //Apply optimistic update on getPosts
+        const getPostsPatchResult = lifecycleApi.dispatch(
+          apiSlice.util.updateQueryData('getPosts', undefined, (draft) => {
+            //draft is immer wrapped => can be mutated like in createSlice
+            const post = draft.find((post) => post.id === postId)
+            if (post) {
+              post.reactions[reactionName]++
+            }
+          }),
+        )
+
+        const getPostPatchResult = lifecycleApi.dispatch(
+          apiSlice.util.updateQueryData('getPost', postId, (draft) => {
+            draft.reactions[reactionName]++
+          }),
+        )
+
+        try {
+          await lifecycleApi.queryFulfilled
+        } catch {
+          getPostsPatchResult.undo()
+          getPostPatchResult.undo()
+        }
+      },
     }),
   }),
 })

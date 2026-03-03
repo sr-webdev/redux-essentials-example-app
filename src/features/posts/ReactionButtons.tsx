@@ -14,7 +14,7 @@ interface ReactionButtonsProps {
 }
 
 export const ReactionButtons = ({ post }: ReactionButtonsProps) => {
-  const [addReaction, { isLoading }] = useAddReactionMutation()
+  const [addReaction] = useAddReactionMutation()
 
   const reactionButtons = Object.entries(reactionEmoji).map(([stringName, emoji]) => {
     // Ensure TS knows this is a _specific_ string type
@@ -24,7 +24,6 @@ export const ReactionButtons = ({ post }: ReactionButtonsProps) => {
         key={reaction}
         type="button"
         className="muted-button reaction-button"
-        disabled={isLoading}
         onClick={() => addReaction({ postId: post.id, reactionName: reaction })}
       >
         {emoji} {post.reactions[reaction]}
